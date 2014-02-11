@@ -14,5 +14,6 @@
            [:body
             {:font-family "sans-serif"
              :font-size (px 16)
-             :color "red"}]
+             :color "red"
+             }]
            )

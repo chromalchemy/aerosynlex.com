@@ -11,7 +11,8 @@
   :src-paths    #{"src"}
   :out-path     "public"
   :garden       '[{:stylesheet garden.css/screen
-                   :compiler {:pretty-print? false}}])
+                   :compiler {:pretty-print? false}}]
+  )
 
 
 (require
@@ -22,15 +23,18 @@
 
 (def html-out "html")
 
-(deftask dev
-         "Build & watch for local dev"
-         []
-         (comp (watch) (garden) (hoplon {:pretty-print  true
-                                         :prerender     false
-                                         :optimizations :whitespace})))
 
-(deftask single
-         "Build single for local dev."
+
+
+(deftask hdev
+         "Build & watch Hoplon for local dev"
+         []
+         (comp (watch) (hoplon {:pretty-print  true
+                                 :prerender     false
+                                 :optimizations :whitespace})))
+
+(deftask hsingle
+         "Build single Hoplon for local dev."
          []
          (hoplon {:pretty-print  false
                   :prerender     false}))
@@ -59,7 +63,7 @@
          []
          (set-env! :garden '[{:stylesheet garden.css/screen
                               :compiler   {:pretty-print? false}}])
-         (add-sync! (get-env :out-path) [html-out])
+         (add-sync! (get-env :out-path) [html-out "assets"])
          (garden-build))
 
 (deftask hoplon
