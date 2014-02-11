@@ -1,0 +1,4 @@
+(page "style.css"
+      (:require [garden.core :refer [css]]) )
+
+(css [:span {:color "blue"}])

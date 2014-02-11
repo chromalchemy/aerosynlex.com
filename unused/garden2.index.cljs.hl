@@ -1,0 +1,13 @@
+(page "index.html"
+      (:require
+       [garden.core :refer [css]]))
+
+(html
+  (head
+    (link :rel "stylesheet" :type "text/css" :href "screen.css")
+    (title "Hoplon with Garden"))
+  (body
+    (style :type "text/css"
+           (css [:h1 {:color "blue"}]))
+    (h1 span "Hoplon with Garden")
+    (h2 "If this text is  sans, we're in business!")))

@@ -1,0 +1,409 @@
+(page "index.html"
+  (:refer-clojure :exclude [int])
+  (:require-macros
+    [bootstrap.code             :as code])
+  (:require
+    [clojure.string             :as string]
+    [bootstrap.core             :as core]
+    [bootstrap.grid             :as grid]
+    [bootstrap.meta             :as meta]
+    [bootstrap.list             :as list]
+    [bootstrap.page             :as page]
+    [bootstrap.tabs             :as tabs]
+    [bootstrap.glyph            :as glyph]
+    [bootstrap.panel            :as panel]
+    [bootstrap.button           :as button]
+    [bootstrap.navbar           :as navbar]
+    [tailrecursion.hoplon.util  :as hutil]
+    [garden.core :refer [css]]))
+
+(def route (hutil/route-cell 10 "#/home/"))
+
+(def cqrs-url             "http://martinfowler.com/bliki/CQRS.html")
+(def hoplon-url           "https://github.com/tailrecursion/hoplon")
+(def boot-url             "https://github.com/tailrecursion/boot")
+(def hoplon-clojars-url   "https://clojars.org/tailrecursion/hoplon")
+(def hoplon-demos-url     "https://github.com/tailrecursion/hoplon-demos")
+(def bootstrap-url        "http://getbootstrap.com/code-demos/")
+(def hoplon-group-url     "https://groups.google.com/forum/#!forum/hoplon")
+(def hoplon-issues-url    "https://github.com/tailrecursion/hoplon/issues")
+(def hoplon-discourse-url "http://hoplon.discoursehosting.net")
+
+(defn hyphenate! []
+  (.. (js/jQuery "p") (addClass "hyphenate") (css "text-align" "justify"))
+  (.run js/Hyphenator))
+
+(def-values
+  [page-setup nav-bar
+   content-home
+   content-code-demos
+   content-page3]
+  (page/navbar-fixed-top
+    route
+    "PageTitle"
+    "PageTitle"
+    [(a :href "#/home/"            "Home") (div)]
+    [(a :href "#/code-demos/" "Page Two") (core/container)]
+    [(a :href "#/page3/"           "Page Three") (core/container)]
+    ))
+
+(def indexed (partial map-indexed list))
+
+(defc gs-tasks {:cur nil :toc []})
+(defc gs-tips  {:cur nil :toc []})
+
+(defelem jump-to-toc [{:keys [tocs]} _]
+  (a :class "topfix" :do-scroll-to (cell= (some zero? (map :cur tocs)))))
+
+(defelem table-of-contents [{:keys [size toc]} _]
+  (let [toc* (cell= (indexed (:toc toc)))]
+    (ul :class "list-unstyled"
+      (loop-tpl
+        :size size
+        :bindings [[i title] toc*]
+        (li (a
+              :style "cursor:pointer;"
+              :on-click #(do (swap! toc assoc :cur nil)
+                             (swap! toc assoc :cur (inc @i)))
+              (text "~{title}")))))))
+
+(defelem gs-block [{:keys [toc type title]} kids]
+  (when toc (swap! toc update-in [:toc] conj title))
+  (panel/default :class (str "panel-" (name type))
+    (when toc
+      (a
+        :class "topfix"
+        :do-scroll-to (cell= (= ~(count (:toc @toc)) (:cur toc)))))
+    (panel/heading
+      (panel/title title))
+    (panel/body
+      kids
+      (when toc
+        (div :style "text-align:center"
+          (a :on-click #(do (swap! toc assoc :cur nil)
+                            (swap! toc assoc :cur 0))
+            "back to top"))))))
+
+(def gs-info (partial gs-block :type :info))
+(def gs-task (partial gs-block :toc gs-tasks :type :primary))
+(def gs-tip  (partial gs-block :toc gs-tips  :type :warning))
+
+(defc example     1)
+(defc bmi-height  180)
+(defc bmi-weight  800)
+
+(defc task2syntax 0)
+
+(defelem my-list [attrs children]
+  (let [heading (b)
+         body    (ul)
+         widget  (div :class "my-list" (heading) (body))]
+    (on-append! widget
+      (fn [{:keys [title] :as attrs} children]
+        (when title (do! heading :text title))
+        (add-attributes! widget (dissoc attrs :title))
+        (apply body (map li children))))
+    (apply widget attrs children)))
+
+(defc= bmi
+  (let [h (/ bmi-height 100)
+        w (/ bmi-weight 10)]
+    (/ w (* h h))))
+
+(defc= bmi-msg
+  (cond
+    (< bmi 18.5) ["underweight" "orange"]
+    (< bmi 25.0) ["normal"      "inherit"]
+    (< bmi 30.0) ["overweight"  "orange"]
+    :else        ["obese"       "red"]))
+
+(def int js/parseInt)
+(def calc-op {"+" + "-" - "*" * "/" /})
+(defc calc-x 0)
+(defc calc-y 0)
+(defc calc-z +)
+
+(defn counter-code []
+  (code/highlight :clj
+    ;;{{
+    (page "index.html")
+
+    (defc clicks 0)
+
+    (html
+      (head)
+      (body
+        (text "Clicks so far: ~{clicks} ")
+        (button :on-click #(swap! clicks inc) "click me!")))
+    ;;}}
+    ))
+
+(defn counter-ex []
+  (let [clicks (cell 0)]
+    (panel/default
+      (panel/body
+        (text "Clicks so far: ~{clicks} ")
+        (button :on-click #(swap! clicks inc) "click me!")))))
+
+
+
+
+
+(defn loop-code1 []
+  (code/highlight :clj
+    ;;{{
+    (page "index.html")
+
+    (defc things ["one" "two" "three"])
+
+    (html
+      (head)
+      (body
+        (ul
+          (loop-tpl :bindings [x things]
+            (li @x)))))
+    ;;}}
+    ))
+
+(defn loop-ex1 []
+  (let [xs (cell ["one" "two" "three"])]
+    (panel/default
+      (panel/body
+        (ul
+          (loop-tpl :size 3 :bindings [x xs]
+            (li @x)))))))
+
+(defn loop-code2 []
+  (code/highlight :clj
+    ;;{{
+    (page "index.html"
+      (:require
+       [clojure.string :refer [upper-case lower-case]]))
+
+    ;; State machine private
+    (defc  uc?    false)
+    (defc  things [{:text "one"} {:text "two"} {:text "three"}])
+    (defc= case   (if uc? upper-case lower-case))
+
+    ;; State machine public API
+    (defc= state  (mapv #(update-in % [:text] case) things))
+    (defn toggle-case! [_] (swap! uc? not))
+
+    ;; Presentation (uses public API)
+    (html
+      (head)
+      (body
+        (ul
+          (loop-tpl :bindings [{x :text} state]
+            (li (text "~{x}"))))
+        (button :on-click toggle-case! "toggle case")))
+    ;;}}
+    ))
+
+(defn loop-ex2 []
+  (let [u? (cell false)
+        uc (cell= (if u? string/upper-case string/lower-case))
+        xs (cell [{:text "one"} {:text "two"} {:text "three"}])
+        st (cell= (mapv #(update-in % [:text] uc) xs))]
+    (panel/default
+      (panel/body
+        (ul
+          (loop-tpl :size 3 :bindings [{x :text} st]
+            (li (text "~{x}"))))
+        (button :on-click #(swap! u? not) "toggle case")))))
+
+
+(def video-dims         {:width 523 :height 392})
+(def video-url          "//www.youtube-nocookie.com/embed/XQu8TTBmGhA")
+(def video-thumb-url    "http://img.youtube.com/vi/XQu8TTBmGhA/0.jpg")
+
+(defn copyright-footer []
+  (footer
+    (div
+      "Copyright ©")))
+
+
+(add-initfn!
+  (fn []
+    (.track js/mixpanel (.. js/window -location -href))
+    (hyphenate!)))
+
+(html :lang "en"
+  (head
+    (meta :charset "utf-8")
+    (meta :name "viewport"    :content "width=device-width, initial-scale=1.0")
+    (meta :name "keywords"    :content "clojure, clojurescript, cqrs, castra, cljson, spa")
+    (meta :name "description" :content "description")
+    (link :href "css/bootstrap.min.css"     :rel "stylesheet" :media "screen")
+    (link :href "css/starter-template.css"  :rel "stylesheet" :media "screen")
+    (link :rel "stylesheet" :type "text/css" :href "screen.css")
+    (title "Title")
+    )
+  (body
+    (style :type "text/css"
+           (css [:h1 {:color "red"}]))
+    (nav-bar)
+    (a :class "topfix" :do-scroll-to (cell= route))
+    (noscript
+      (div :class "nojs-error"
+        "This page uses JavaScript but it looks like you have it turned off."))
+    (content-home
+      (core/jumbotron
+        (core/container
+          (core/container
+            (h1 "Title")
+
+            )))
+      (core/container
+        (grid/row
+          (grid/col4
+            (h2 "Col 1")
+            )
+          (grid/col4
+            (h2 "Col 2")
+            )
+          (grid/col4
+            (h2 "Col 3")
+            )
+          )
+
+        (grid/row
+          (grid/col6
+            (h2 "Col 1")
+            )
+          (grid/col6
+            (h2 "Col 2")
+            (comment
+              (h2 (small "Screencast"))
+              (panel/default
+                (panel/body
+                  (iframe
+                    :class "center-block"
+                    :width (:width video-dims)
+                    :height (:height video-dims)
+                    :src video-url
+                    :frameborder "0"
+                    :allowfullscreen true))))
+            (h2 (small "list/divgroup"))
+            (list/divgroup
+              (list/divitem
+                :on-click #(reset! example 1)
+                (a
+                  :do-toggle (cell= (not= example 1))
+                  (panel/title "Panel 1"))
+                (div
+                  :do-toggle (cell= (= example 1))
+                  (panel/title "Panel 1")
+
+                  (code/highlight :clj
+                    ;;{{
+                                  Code segment
+                    ;;}}
+                    )
+                  (code/highlight :xml
+                    ;;{{
+                                  Code segment
+                    ;;}}
+                    )))
+              (list/divitem
+                :on-click #(reset! example 2)
+                (a :class "topfix" :do-scroll-to (cell= (= example 2)))
+                (a
+                  :do-toggle (cell= (not= example 2))
+                  (panel/title "Panel 2"))
+                (div
+                  :do-toggle (cell= (= example 2))
+                  (panel/title "Panel 2")
+
+
+                  )
+                )
+              )
+            (panel/default
+              (panel/heading
+                (panel/title "Panel"))
+              (panel/body
+                (tabs/tabs
+                  (span "1")(span "panel 1")
+                  (span "2")
+                  (span "panel 2")
+                  )))
+            ))
+        (hr)
+        (copyright-footer)))
+
+    (content-code-demos
+      (grid/row
+        (grid/col6
+          (h1
+            "Page Title"
+            )
+
+
+          (jump-to-toc :tocs (cell= [gs-tasks gs-tips]))
+          (panel/default
+            (panel/heading
+              (panel/title "Table of Contents"))
+            (panel/body
+              (grid/row
+                (grid/col6
+                  (table-of-contents :size 10 :toc gs-tasks))
+                (grid/col6
+                  (table-of-contents :size 10 :toc gs-tips)))))
+
+          (gs-info :title "gl-info"
+                   )
+
+          (gs-task :title "gs-task 1"
+
+            (code/highlight :bash
+              ;;{{
+              code example
+              ;;}}
+              )
+            )
+
+          (gs-task :title "gs-task 2")
+
+          (gs-task :title "Tabs task"
+                   (panel/default
+                     (panel/body
+                       (tabs/tabs
+                         (span "Zero")
+                         (div
+                           (h4 "Foo")
+                           (p "Content for tab 0."))
+                         (span "One")
+                         (div
+                           (h4 "Bar")
+                           (p "Content for tab 1."))
+                         (span "Two")
+                         (div
+                           (h4 "Baz")
+                           (p "Content for tab 2.")))))
+            )
+          )
+
+        (grid/col6
+          (h2 "asdf")
+          (gs-tip :title "Tip 1")
+
+          (gs-tip :title "Tip 2"
+
+            (code/markdown
+              ;;{{
+              Markdown
+              ;;}}
+              )
+            )
+          )
+        )
+
+
+      (hr)
+      (copyright-footer))
+
+    (content-page3
+      (grid/row
+        (h1 "Row")
+        ))))

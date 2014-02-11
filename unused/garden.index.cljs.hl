@@ -1,0 +1,10 @@
+(page "index.html")
+
+(defc name "Hello World")
+
+
+(html
+
+  (body
+    (text (css [:span {:color "blue"}]))
+    (span (text "~{name}"))))
